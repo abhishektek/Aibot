@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Universal AI Chat | Gemini Clone</title>
+    <title>Universal AI Chat | Fixed Version</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Marked.js for Markdown Rendering -->
+    <!-- Marked.js for Markdown -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     
     <!-- Phosphor Icons -->
@@ -36,23 +36,17 @@
     </script>
 
     <style>
-        /* Custom Scrollbar for clean UI */
+        /* Smooth Scrollbar */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #1a202c; }
         ::-webkit-scrollbar-thumb { background: #4a5568; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: #718096; }
-
-        /* Markdown Styles within Chat */
-        .prose pre { background: #1a202c; padding: 10px; border-radius: 8px; overflow-x: auto; }
+        
+        /* Markdown Styling */
+        .prose pre { background: #0d1117; padding: 12px; border-radius: 8px; overflow-x: auto; border: 1px solid #30363d; }
         .prose code { color: #e2e8f0; font-family: monospace; }
         .prose p { margin-bottom: 0.5rem; }
-        .prose ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 0.5rem; }
-        .prose ol { list-style-type: decimal; padding-left: 1.5rem; margin-bottom: 0.5rem; }
         
-        /* Mobile Overlay Transition */
-        .sidebar-transition { transition: transform 0.3s ease-in-out; }
-        
-        /* Loading Animation */
+        /* Animations */
         .typing-dot {
             animation: typing 1.4s infinite ease-in-out both;
             height: 6px; width: 6px; background-color: #a0aec0; border-radius: 50%; display: inline-block; margin: 0 1px;
@@ -60,35 +54,28 @@
         .typing-dot:nth-child(1) { animation-delay: -0.32s; }
         .typing-dot:nth-child(2) { animation-delay: -0.16s; }
         
-        @keyframes typing {
-            0%, 80%, 100% { transform: scale(0); }
-            40% { transform: scale(1); }
-        }
+        @keyframes typing { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
     </style>
 </head>
-<body class="bg-gray-900 text-gray-100 h-screen w-screen overflow-hidden flex text-sm md:text-base">
+<body class="bg-gray-900 text-gray-100 h-screen w-screen overflow-hidden flex text-sm md:text-base selection:bg-blue-500 selection:text-white">
 
-    <!-- Mobile Overlay (Backdrop) -->
-    <div id="mobile-overlay" class="fixed inset-0 bg-black/50 z-20 hidden md:hidden" onclick="toggleSidebar()"></div>
+    <!-- Mobile Overlay -->
+    <div id="mobile-overlay" class="fixed inset-0 bg-black/60 z-20 hidden md:hidden backdrop-blur-sm transition-opacity" onclick="toggleSidebar()"></div>
 
     <!-- SIDEBAR -->
-    <aside id="sidebar" class="fixed md:relative z-30 w-72 h-full bg-gray-950 flex flex-col border-r border-gray-800 sidebar-transition transform -translate-x-full md:translate-x-0">
-        
-        <!-- Sidebar Header -->
-        <div class="p-4 flex items-center justify-between">
-            <button onclick="createNewChat()" class="w-full flex items-center justify-center gap-2 bg-gray-800 hover:bg-gray-700 text-gray-200 py-3 px-4 rounded-full transition-all duration-200 border border-gray-700">
+    <aside id="sidebar" class="fixed md:relative z-30 w-72 h-full bg-gray-950 flex flex-col border-r border-gray-800 transition-transform duration-300 transform -translate-x-full md:translate-x-0">
+        <div class="p-4">
+            <button onclick="createNewChat()" class="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white py-3 px-4 rounded-xl transition-all shadow-lg shadow-blue-900/20">
                 <i class="ph ph-plus text-lg"></i>
                 <span class="font-medium">New Chat</span>
             </button>
         </div>
 
-        <!-- History List -->
-        <div class="flex-1 overflow-y-auto px-2" id="chat-history-list">
-            <!-- Chat items injected here -->
+        <div class="flex-1 overflow-y-auto px-2 space-y-1" id="chat-history-list">
+            <!-- History Items go here -->
         </div>
 
-        <!-- Sidebar Footer -->
-        <div class="p-4 border-t border-gray-800">
+        <div class="p-4 border-t border-gray-800 bg-gray-950">
             <button onclick="openSettings()" class="flex items-center gap-3 w-full p-3 hover:bg-gray-800 rounded-lg transition-colors text-gray-400 hover:text-white">
                 <i class="ph ph-gear text-xl"></i>
                 <span>Settings</span>
@@ -96,351 +83,381 @@
         </div>
     </aside>
 
-    <!-- MAIN CHAT AREA -->
-    <main class="flex-1 flex flex-col h-full relative w-full">
+    <!-- MAIN AREA -->
+    <main class="flex-1 flex flex-col h-full relative w-full bg-gray-900">
         
-        <!-- Header (Mobile Toggle + Title) -->
+        <!-- Header -->
         <header class="h-14 flex items-center justify-between px-4 border-b border-gray-800 bg-gray-900/95 backdrop-blur z-10">
             <div class="flex items-center gap-3">
                 <button onclick="toggleSidebar()" class="md:hidden p-2 text-gray-400 hover:text-white">
                     <i class="ph ph-list text-2xl"></i>
                 </button>
-                <span id="current-model-display" class="text-gray-400 text-xs md:text-sm font-mono bg-gray-800 px-2 py-1 rounded">Gemini Pro</span>
+                <div class="flex flex-col">
+                    <span class="text-gray-200 font-medium">Gemini Clone</span>
+                    <span id="model-badge" class="text-[10px] text-gray-500 uppercase tracking-wider">Connecting...</span>
+                </div>
             </div>
-            <div class="text-gray-400 text-sm font-medium">Universal AI</div>
+            <button onclick="clearAllChats()" class="text-xs text-red-400 hover:text-red-300 hover:underline">Clear All</button>
         </header>
 
-        <!-- Chat Container -->
+        <!-- Chat Area -->
         <div id="chat-container" class="flex-1 overflow-y-auto p-4 md:p-8 scroll-smooth pb-32">
-            <!-- Welcome State -->
-            <div id="welcome-screen" class="flex flex-col items-center justify-center h-full text-center opacity-100 transition-opacity duration-300">
-                <div class="w-16 h-16 bg-gradient-to-tr from-blue-500 to-purple-600 rounded-2xl mb-6 flex items-center justify-center shadow-lg shadow-purple-900/20">
+            <div id="welcome-screen" class="flex flex-col items-center justify-center h-full text-center">
+                <div class="w-16 h-16 bg-gradient-to-tr from-blue-500 to-purple-600 rounded-2xl mb-6 flex items-center justify-center shadow-lg shadow-blue-500/20 animate-bounce">
                     <i class="ph ph-sparkle text-3xl text-white"></i>
                 </div>
-                <h1 class="text-2xl md:text-4xl font-semibold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-gray-100 to-gray-400">Hello, Human.</h1>
-                <p class="text-gray-500">How can I help you today?</p>
+                <h1 class="text-3xl font-bold mb-2 text-white">Universal AI</h1>
+                <p class="text-gray-500 max-w-sm">Set your API key in settings to start chatting with Google Gemini, GPT-4, or Claude.</p>
+                <button onclick="openSettings()" class="mt-6 text-blue-400 hover:text-blue-300 underline">Configure API Key</button>
             </div>
-            
-            <!-- Messages will be appended here -->
             <div id="messages-list" class="flex flex-col gap-6 max-w-3xl mx-auto w-full hidden"></div>
         </div>
 
         <!-- Input Area -->
         <div class="absolute bottom-0 left-0 w-full bg-gradient-to-t from-gray-900 via-gray-900 to-transparent pt-10 pb-6 px-4">
-            <div class="max-w-3xl mx-auto relative bg-gray-800 rounded-2xl border border-gray-700 shadow-xl focus-within:border-gray-500 focus-within:ring-1 focus-within:ring-gray-500 transition-all">
-                <textarea 
-                    id="user-input" 
-                    rows="1" 
-                    placeholder="Message Universal AI..." 
-                    class="w-full bg-transparent text-white p-4 pr-12 rounded-2xl focus:outline-none resize-none overflow-hidden max-h-48 leading-relaxed"
-                    oninput="autoResize(this)"
-                    onkeydown="handleEnter(event)"
-                ></textarea>
-                <button onclick="sendMessage()" id="send-btn" class="absolute right-2 bottom-2 p-2 bg-white text-black rounded-full hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            <div class="max-w-3xl mx-auto relative bg-gray-800 rounded-2xl border border-gray-700 shadow-2xl focus-within:border-blue-500/50 focus-within:ring-1 focus-within:ring-blue-500/50 transition-all">
+                <textarea id="user-input" rows="1" placeholder="Type a message..." class="w-full bg-transparent text-white p-4 pr-14 rounded-2xl focus:outline-none resize-none overflow-hidden max-h-48 leading-relaxed" oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'" onkeydown="handleEnter(event)"></textarea>
+                <button onclick="sendMessage()" id="send-btn" class="absolute right-2 bottom-2 p-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-all shadow-lg">
                     <i class="ph ph-paper-plane-right text-lg"></i>
                 </button>
-            </div>
-            <div class="text-center mt-2">
-                <p class="text-xs text-gray-500">AI can make mistakes. Check important info.</p>
             </div>
         </div>
     </main>
 
     <!-- SETTINGS MODAL -->
     <div id="settings-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm hidden">
-        <div class="bg-gray-900 border border-gray-800 w-full max-w-md rounded-2xl shadow-2xl p-6 m-4 transform transition-all scale-100">
+        <div class="bg-gray-900 border border-gray-800 w-full max-w-md rounded-2xl shadow-2xl p-6 m-4 animate-[fadeIn_0.2s_ease-out]">
             <div class="flex justify-between items-center mb-6">
-                <h2 class="text-xl font-semibold">Settings</h2>
+                <h2 class="text-xl font-bold text-white">Settings</h2>
                 <button onclick="closeSettings()" class="text-gray-400 hover:text-white"><i class="ph ph-x text-xl"></i></button>
             </div>
-
-            <div class="space-y-4">
+            
+            <div class="space-y-5">
                 <div>
-                    <label class="block text-sm text-gray-400 mb-2">OpenRouter API Key</label>
-                    <input type="password" id="api-key-input" placeholder="sk-or-..." class="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-white focus:outline-none focus:border-blue-500">
-                    <p class="text-xs text-gray-500 mt-1">Key is stored locally in your browser.</p>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">OpenRouter API Key (Required)</label>
+                    <input type="password" id="api-key-input" placeholder="sk-or-v1-..." class="w-full bg-black/50 border border-gray-700 rounded-lg p-3 text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all placeholder-gray-600">
+                    <a href="https://openrouter.ai/keys" target="_blank" class="text-xs text-blue-400 mt-2 inline-block hover:underline">Get a Key here</a>
                 </div>
                 <div>
-                    <label class="block text-sm text-gray-400 mb-2">Model Name</label>
-                    <input type="text" id="model-input" placeholder="google/gemini-2.0-flash-001" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-white focus:outline-none focus:border-blue-500">
-                    <p class="text-xs text-gray-500 mt-1">Default: google/gemini-2.0-flash-001</p>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Model ID</label>
+                    <input type="text" id="model-input" value="google/gemini-2.0-flash-001" class="w-full bg-black/50 border border-gray-700 rounded-lg p-3 text-white focus:outline-none focus:border-blue-500">
+                    <p class="text-xs text-gray-500 mt-1">Examples: google/gemini-2.0-flash-001, openai/gpt-4o</p>
                 </div>
             </div>
 
-            <div class="mt-8 flex justify-end">
-                <button onclick="saveSettings()" class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded-lg font-medium transition-colors">Save</button>
+            <div class="mt-8 flex justify-end gap-3">
+                <button onclick="closeSettings()" class="px-4 py-2 text-gray-400 hover:text-white">Cancel</button>
+                <button onclick="saveSettings()" class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded-lg font-medium transition-colors shadow-lg shadow-blue-900/40">Save Changes</button>
             </div>
         </div>
     </div>
 
-    <!-- JAVASCRIPT LOGIC -->
+    <!-- MAIN SCRIPT -->
     <script>
-        // --- State Management ---
-        const APP_STATE = {
-            chats: JSON.parse(localStorage.getItem('universal_ai_chats')) || [],
-            currentChatId: null,
-            config: {
-                apiKey: localStorage.getItem('universal_ai_key') || '',
-                model: localStorage.getItem('universal_ai_model') || 'google/gemini-2.0-flash-001'
-            }
-        };
+        // --- CONFIGURATION ---
+        const DEFAULT_MODEL = "google/gemini-2.0-flash-001";
+        const STORAGE_KEY_CHATS = "uni_ai_chats_v2";
+        const STORAGE_KEY_API = "uni_ai_api_key";
+        const STORAGE_KEY_MODEL = "uni_ai_model";
 
-        // --- DOM Elements ---
+        let chats = JSON.parse(localStorage.getItem(STORAGE_KEY_CHATS)) || [];
+        let currentChatId = null;
+        let apiKey = localStorage.getItem(STORAGE_KEY_API) || "";
+        let currentModel = localStorage.getItem(STORAGE_KEY_MODEL) || DEFAULT_MODEL;
+
+        // --- DOM ELEMENTS ---
         const els = {
             input: document.getElementById('user-input'),
-            messagesList: document.getElementById('messages-list'),
-            chatContainer: document.getElementById('chat-container'),
-            welcomeScreen: document.getElementById('welcome-screen'),
+            messages: document.getElementById('messages-list'),
+            container: document.getElementById('chat-container'),
+            welcome: document.getElementById('welcome-screen'),
+            history: document.getElementById('chat-history-list'),
             sidebar: document.getElementById('sidebar'),
             overlay: document.getElementById('mobile-overlay'),
-            historyList: document.getElementById('chat-history-list'),
-            modelDisplay: document.getElementById('current-model-display'),
-            settingsModal: document.getElementById('settings-modal'),
-            apiKeyInput: document.getElementById('api-key-input'),
-            modelInput: document.getElementById('model-input'),
-            sendBtn: document.getElementById('send-btn')
+            modal: document.getElementById('settings-modal'),
+            apiKey: document.getElementById('api-key-input'),
+            model: document.getElementById('model-input'),
+            badge: document.getElementById('model-badge')
         };
 
-        // --- Initialization ---
+        // --- INIT ---
         function init() {
             renderHistory();
-            els.modelDisplay.innerText = APP_STATE.config.model.split('/').pop(); // Show short name
+            updateModelBadge();
             
-            // Check for API Key
-            if (!APP_STATE.config.apiKey) {
-                setTimeout(openSettings, 500);
-            }
-
-            // Load last chat if exists
-            if (APP_STATE.chats.length > 0) {
-                loadChat(APP_STATE.chats[0].id);
-            } else {
-                createNewChat(false);
+            // Auto-open settings if no key
+            if (!apiKey) {
+                setTimeout(openSettings, 600);
+            } else if (chats.length > 0) {
+                // Load most recent chat
+                loadChat(chats[0].id);
             }
         }
 
-        // --- Sidebar Logic ---
+        // --- SIDEBAR & UI ---
         function toggleSidebar() {
-            const isClosed = els.sidebar.classList.contains('-translate-x-full');
-            if (isClosed) {
-                els.sidebar.classList.remove('-translate-x-full');
-                els.overlay.classList.remove('hidden');
-            } else {
-                els.sidebar.classList.add('-translate-x-full');
-                els.overlay.classList.add('hidden');
-            }
+            els.sidebar.classList.toggle('-translate-x-full');
+            els.overlay.classList.toggle('hidden');
+        }
+
+        function updateModelBadge() {
+            const shortName = currentModel.split('/').pop().replace(/-/g, ' ');
+            els.badge.innerText = shortName;
         }
 
         function renderHistory() {
-            els.historyList.innerHTML = '';
-            
-            // Sort by date (newest first)
-            const sortedChats = [...APP_STATE.chats].sort((a,b) => b.timestamp - a.timestamp);
-
-            sortedChats.forEach(chat => {
-                const isActive = chat.id === APP_STATE.currentChatId;
+            els.history.innerHTML = '';
+            chats.sort((a, b) => b.timestamp - a.timestamp).forEach(chat => {
+                const isActive = chat.id === currentChatId;
                 const div = document.createElement('div');
-                div.className = `group flex items-center justify-between p-3 mb-1 rounded-lg cursor-pointer transition-colors ${isActive ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-800/50 hover:text-gray-200'}`;
-                div.onclick = () => { loadChat(chat.id); if(window.innerWidth < 768) toggleSidebar(); };
-                
+                div.className = `group flex items-center justify-between p-3 rounded-lg cursor-pointer transition-all ${isActive ? 'bg-gray-800 text-white shadow-sm' : 'text-gray-400 hover:bg-gray-900 hover:text-gray-200'}`;
+                div.onclick = () => loadChat(chat.id);
                 div.innerHTML = `
                     <div class="flex items-center gap-3 overflow-hidden">
                         <i class="ph ph-chat-circle text-lg"></i>
-                        <span class="truncate text-sm font-medium w-40">${chat.title}</span>
+                        <span class="truncate text-sm font-medium w-40">${chat.title || 'New Chat'}</span>
                     </div>
                     <button onclick="deleteChat(event, '${chat.id}')" class="opacity-0 group-hover:opacity-100 p-1 hover:text-red-400 transition-opacity">
                         <i class="ph ph-trash"></i>
                     </button>
                 `;
-                els.historyList.appendChild(div);
+                els.history.appendChild(div);
             });
         }
 
-        // --- Chat Logic ---
-        function createNewChat(shouldRender = true) {
-            APP_STATE.currentChatId = Date.now().toString();
-            els.welcomeScreen.classList.remove('hidden');
-            els.messagesList.classList.add('hidden');
-            els.messagesList.innerHTML = '';
+        // --- CHAT LOGIC ---
+        function createNewChat() {
+            currentChatId = Date.now().toString();
+            els.welcome.classList.remove('hidden');
+            els.messages.classList.add('hidden');
+            els.messages.innerHTML = '';
             els.input.value = '';
-            els.input.style.height = 'auto';
-            if(window.innerWidth < 768 && !els.sidebar.classList.contains('-translate-x-full')) toggleSidebar();
-            if(shouldRender) renderHistory();
+            // Close sidebar on mobile
+            if(window.innerWidth < 768) {
+                els.sidebar.classList.add('-translate-x-full');
+                els.overlay.classList.add('hidden');
+            }
+            // De-select active styling in history
+            renderHistory(); 
         }
 
         function loadChat(id) {
-            APP_STATE.currentChatId = id;
-            const chat = APP_STATE.chats.find(c => c.id === id);
+            const chat = chats.find(c => c.id === id);
             if (!chat) return;
-
-            els.welcomeScreen.classList.add('hidden');
-            els.messagesList.classList.remove('hidden');
-            els.messagesList.innerHTML = '';
-
-            chat.messages.forEach(msg => appendMessageToUI(msg.role, msg.content));
+            currentChatId = id;
+            els.welcome.classList.add('hidden');
+            els.messages.classList.remove('hidden');
+            els.messages.innerHTML = '';
+            chat.messages.forEach(msg => appendMessage(msg.role, msg.content, false));
             renderHistory();
             scrollToBottom();
+            
+            // Close sidebar on mobile
+            if(window.innerWidth < 768) {
+                els.sidebar.classList.add('-translate-x-full');
+                els.overlay.classList.add('hidden');
+            }
         }
 
         function deleteChat(e, id) {
             e.stopPropagation();
-            if(!confirm('Delete this chat?')) return;
-            
-            APP_STATE.chats = APP_STATE.chats.filter(c => c.id !== id);
-            saveData();
-            
-            if (APP_STATE.currentChatId === id) {
-                createNewChat();
-            } else {
-                renderHistory();
+            if(confirm("Delete this chat?")) {
+                chats = chats.filter(c => c.id !== id);
+                saveChats();
+                if(currentChatId === id) createNewChat();
+                else renderHistory();
             }
         }
 
-        // --- Messaging Core ---
+        function clearAllChats() {
+            if(confirm("Clear ALL history? This cannot be undone.")) {
+                chats = [];
+                saveChats();
+                createNewChat();
+            }
+        }
+
+        // --- MESSAGING ---
         async function sendMessage() {
             const text = els.input.value.trim();
             if (!text) return;
-            if (!APP_STATE.config.apiKey) {
-                alert("Please set your OpenRouter API Key in settings.");
+            
+            if (!apiKey) {
+                alert("⚠️ Please enter your API Key in Settings first!");
                 openSettings();
                 return;
             }
 
-            // 1. Reset Input
+            // UI Updates
             els.input.value = '';
             els.input.style.height = 'auto';
+            els.welcome.classList.add('hidden');
+            els.messages.classList.remove('hidden');
             
-            // 2. Hide Welcome, Show List
-            els.welcomeScreen.classList.add('hidden');
-            els.messagesList.classList.remove('hidden');
+            // 1. User Message
+            appendMessage('user', text);
+            addToChatHistory('user', text);
 
-            // 3. Add User Message
-            appendMessageToUI('user', text);
-            updateChatState('user', text);
-
-            // 4. Create AI Placeholder
-            const loadingId = appendLoadingIndicator();
+            // 2. Loading State
+            const loadingId = appendLoading();
             scrollToBottom();
 
-            // 5. API Call
             try {
+                // 3. API Request
                 const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
                     method: "POST",
                     headers: {
-                        "Authorization": `Bearer ${APP_STATE.config.apiKey}`,
+                        "Authorization": `Bearer ${apiKey}`,
+                        "HTTP-Referer": window.location.href, // Required by OpenRouter
+                        "X-Title": "Universal AI Clone",
                         "Content-Type": "application/json"
                     },
                     body: JSON.stringify({
-                        model: APP_STATE.config.model,
-                        messages: getContextForApi()
+                        model: currentModel,
+                        messages: getContextMessages()
                     })
                 });
 
                 const data = await response.json();
                 
-                // Remove Loading
-                document.getElementById(loadingId).remove();
+                // Remove loading
+                const loader = document.getElementById(loadingId);
+                if(loader) loader.remove();
 
-                if (data.error) throw new Error(data.error.message);
-                
-                const aiContent = data.choices?.[0]?.message?.content || "No response received.";
-                
-                // 6. Add AI Message
-                appendMessageToUI('assistant', aiContent);
-                updateChatState('assistant', aiContent);
+                if(data.error) {
+                    throw new Error(data.error.message || "Unknown API Error");
+                }
 
-            } catch (error) {
-                document.getElementById(loadingId)?.remove();
-                appendMessageToUI('assistant', `**Error:** ${error.message}. Check your API Key.`);
+                const botReply = data.choices?.[0]?.message?.content || "No response.";
+                
+                // 4. Bot Message
+                appendMessage('assistant', botReply);
+                addToChatHistory('assistant', botReply);
+
+            } catch (err) {
+                const loader = document.getElementById(loadingId);
+                if(loader) loader.remove();
+                
+                appendMessage('assistant', `**Error:** ${err.message}\n\nPlease check your API Key in settings.`);
+                console.error(err);
             }
         }
 
-        function getContextForApi() {
-            // Get current chat history for context
-            const chat = APP_STATE.chats.find(c => c.id === APP_STATE.currentChatId);
-            return chat ? chat.messages : [];
+        function getContextMessages() {
+            const chat = chats.find(c => c.id === currentChatId);
+            const history = chat ? chat.messages.slice(-10) : []; // Send last 10 messages for context
+            return history.map(m => ({ role: m.role, content: m.content }));
         }
 
-        function updateChatState(role, content) {
-            let chat = APP_STATE.chats.find(c => c.id === APP_STATE.currentChatId);
-            
+        function addToChatHistory(role, content) {
+            let chat = chats.find(c => c.id === currentChatId);
             if (!chat) {
-                // First message creates the chat object
                 chat = {
-                    id: APP_STATE.currentChatId,
-                    title: content.slice(0, 30) + (content.length > 30 ? '...' : ''),
+                    id: currentChatId,
+                    title: content.substring(0, 30),
                     timestamp: Date.now(),
                     messages: []
                 };
-                APP_STATE.chats.unshift(chat);
+                chats.unshift(chat);
             } else {
-                // Update timestamp for sorting
                 chat.timestamp = Date.now();
+                // Move to top
+                chats = chats.filter(c => c.id !== currentChatId);
+                chats.unshift(chat);
             }
-
             chat.messages.push({ role, content });
-            saveData();
+            saveChats();
             renderHistory();
         }
 
-        function saveData() {
-            localStorage.setItem('universal_ai_chats', JSON.stringify(APP_STATE.chats));
+        function saveChats() {
+            localStorage.setItem(STORAGE_KEY_CHATS, JSON.stringify(chats));
         }
 
-        // --- UI Rendering Helpers ---
-        function appendMessageToUI(role, text) {
+        // --- RENDER HELPERS ---
+        function appendMessage(role, text, animate = true) {
             const div = document.createElement('div');
             const isUser = role === 'user';
+            div.className = `flex w-full ${isUser ? 'justify-end' : 'justify-start'} ${animate ? 'animate-[fadeIn_0.3s_ease-out]' : ''}`;
             
-            div.className = `flex w-full ${isUser ? 'justify-end' : 'justify-start'}`;
-            
-            // Render Markdown safely
-            const parsedContent = marked.parse(text);
+            // Markdown Parse
+            const htmlContent = marked.parse(text);
 
             div.innerHTML = `
                 <div class="flex gap-4 max-w-[85%] md:max-w-[75%] ${isUser ? 'flex-row-reverse' : 'flex-row'}">
-                    <div class="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${isUser ? 'bg-white' : 'bg-blue-600'}">
-                        <i class="ph ${isUser ? 'ph-user text-black' : 'ph-sparkle text-white'} text-lg"></i>
+                    <div class="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${isUser ? 'bg-gray-700' : 'bg-blue-600'} shadow-md">
+                        <i class="ph ${isUser ? 'ph-user' : 'ph-sparkle'} text-white text-lg"></i>
                     </div>
-                    <div class="flex flex-col ${isUser ? 'items-end' : 'items-start'}">
-                        <div class="px-5 py-3.5 rounded-2xl shadow-sm prose prose-invert max-w-none text-sm md:text-base leading-relaxed break-words ${isUser ? 'bg-gray-800 text-gray-100 rounded-tr-sm' : 'bg-transparent text-gray-100 pl-0'}">
-                            ${parsedContent}
+                    <div class="flex flex-col ${isUser ? 'items-end' : 'items-start'} min-w-0">
+                        <div class="px-5 py-3.5 rounded-2xl shadow-sm prose prose-invert max-w-none text-sm md:text-base leading-relaxed break-words border border-transparent ${isUser ? 'bg-gray-800 text-gray-100 rounded-tr-sm border-gray-700' : 'text-gray-100 pl-0'}">
+                            ${htmlContent}
                         </div>
                     </div>
                 </div>
             `;
-            els.messagesList.appendChild(div);
+            els.messages.appendChild(div);
             scrollToBottom();
         }
 
-        function appendLoadingIndicator() {
+        function appendLoading() {
             const id = 'loading-' + Date.now();
             const div = document.createElement('div');
             div.id = id;
-            div.className = `flex w-full justify-start animate-pulse`;
+            div.className = "flex w-full justify-start";
             div.innerHTML = `
-                 <div class="flex gap-4 max-w-[85%]">
-                    <div class="flex-shrink-0 w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center">
+                <div class="flex gap-4 max-w-[85%]">
+                    <div class="flex-shrink-0 w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center shadow-md">
                         <i class="ph ph-sparkle text-white text-lg"></i>
                     </div>
-                    <div class="flex items-center h-full pt-2">
+                    <div class="flex items-center h-full pt-2 pl-2 gap-1">
                         <div class="typing-dot"></div>
                         <div class="typing-dot"></div>
                         <div class="typing-dot"></div>
                     </div>
                 </div>
             `;
-            els.messagesList.appendChild(div);
+            els.messages.appendChild(div);
             return id;
         }
 
         function scrollToBottom() {
-            els.chatContainer.scrollTop = els.chatContainer.scrollHeight;
+            els.container.scrollTo({ top: els.container.scrollHeight, behavior: 'smooth' });
         }
 
-        function autoResize(textarea) {
-            textarea.style.height = 'auto';
-            textarea.style.height = textarea.scrollHeight + 'px';
+        function handleEnter(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
         }
 
-        function handle
+        // --- SETTINGS ---
+        function openSettings() {
+            els.apiKey.value = apiKey;
+            els.model.value = currentModel;
+            els.modal.classList.remove('hidden');
+        }
+
+        function closeSettings() {
+            els.modal.classList.add('hidden');
+        }
+
+        function saveSettings() {
+            apiKey = els.apiKey.value.trim();
+            currentModel = els.model.value.trim() || DEFAULT_MODEL;
+            
+            localStorage.setItem(STORAGE_KEY_API, apiKey);
+            localStorage.setItem(STORAGE_KEY_MODEL, currentModel);
+            
+            updateModelBadge();
+            closeSettings();
+            
+            if(!chats.length) createNewChat();
+        }
+
+        // Start
+        init();
+
+    </script>
+</body>
+</html>
